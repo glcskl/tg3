@@ -1,117 +1,96 @@
-# 📸 tg3 — Photo Bot
+# tg3 — Telegram photo text bot
 
-**8 сентября 2026, личный проект.** Задача: оформлять фотографии текстом прямо в Telegram, без монтажа в редакторе. Решение: **tg3** — бот на Flask и Pillow с единой панелью настроек, где фильтр, шрифт, текст, позиция, рамка и стиль текста меняются в любой момент, прямо в открытой панели.
+A Telegram bot that writes styled text onto a photo and sends the result back without the user ever opening an image editor. The user picks a style, types the text, and receives a finished image.
 
-Только webhook-режим: polling в проекте нет. Состояние между шагами хранится в Upstash Redis, поэтому диалог переживает перезапуск на Render.
+## Features
 
----
+- Renders text onto an image with Pillow, no external editing required
+- Several text styles to choose from
+- Result returned to the chat as a photo
+- Session state stored in Upstash Redis, so an in-progress edit survives a restart
+- Webhook mode with a Flask application fronted by Gunicorn
+- Blueprint definition for one-click provisioning on Render
 
-## Как пользоваться
+## Tech stack
 
-1. Отправь боту фотографию
-2. Впиши текст. Подзаголовок — после `|`
-3. Настрой оформление в панели и жми **Готово**
+| Layer | Technology |
+| --- | --- |
+| Language | Python 3 |
+| Web layer | Flask 3.1 |
+| WSGI server | Gunicorn 23 |
+| Imaging | Pillow 11.1 |
+| Session storage | Upstash Redis |
+| Configuration | python-dotenv |
+| HTTP client | requests |
+| Hosting | Render |
 
-### Разделы панели
+## Getting started
 
-| Раздел | Варианты |
-|---|---|
-| **Фильтры** | Оригинал · Сепия · Ч/Б · Винтаж · Неон |
-| **Шрифты** | Мем · Официальный · Современный |
-| **Текст** | ввод заголовка и подзаголовка |
-| **Позиция** | Сверху · Центр · Снизу · Мем-стиль |
-| **Рамка** | Без рамки · Поляроид · Мем-рамка · Градиент · Виньетка |
-| **Стиль текста** | Обводка · Тень · Плашка · Авто-цвет |
+### Requirements
 
-Навигация свободная: кнопка **Назад** возвращает в корень панели, любой раздел открывается в любой момент, менять настройки можно не перезапуская диалог.
+- Python 3.11 or newer
+- A bot token from [@BotFather](https://t.me/BotFather)
+- An Upstash Redis database, used as a free alternative to managed storage
 
-### Кнопки результата
+### Environment variables
 
-| Кнопка | Действие |
-|---|---|
-| Другой вариант | перегенерировать с тем же текстом |
-| Случайный стиль | рандомизировать все параметры разом |
-| Сохранить | оставить результат |
-| Готово | финальный рендер |
+| Variable | Required | Description |
+| --- | --- | --- |
+| `BOT_TOKEN` | yes | Token issued by BotFather |
+| `BOT_USERNAME` | yes | Bot username, without the leading `@` |
+| `EXTERNAL_URL` | webhook mode | Public HTTPS URL of the deployed instance |
+| `REDIS_URL` | yes | Upstash Redis connection string |
+| `REDIS_TOKEN` | yes | Upstash Redis access token |
 
-### Примеры текста
-
-```
-Скидка 50%
-Новая коллекция | Весна 2026
-Главное событие недели
-```
-
-## Настройки по умолчанию
-
-`filter: original` · `font: mem` · `position: center` · `frame: none` · `tstyle: outline`
-
-## Переменные окружения
-
-| Переменная | Обязательна | Назначение |
-|---|---|---|
-| `BOT_TOKEN` | да | токен от @BotFather. Без неё приложение падает на старте с `RuntimeError` |
-| `EXTERNAL_URL` | для keep-alive | `https://<имя>.onrender.com`, без слеша в конце |
-| `REDIS_URL` | для состояний | `https://<db>.upstash.io` |
-| `REDIS_TOKEN` | для состояний | токен Upstash |
-| `BOT_USERNAME` | нет | для ссылок, по умолчанию `ph_editot_bot` |
-
-> В `.env.example` описан только `BOT_TOKEN` — остальные четыре переменные в примере не упомянуты, хотя без них не заработают ни keep-alive, ни сохранение настроек.
-
-## HTTP-эндпоинты
-
-| Метод | Путь | Назначение |
-|---|---|---|
-| `GET` | `/` | проверка живости |
-| `GET` | `/health` | health check для мониторинга |
-| `POST` | `/webhook/{BOT_TOKEN}` | приём апдейтов от Telegram |
-
-Токен в пути вебхука — он попадает в логи Render и в историю браузера.
-
-## Как не засыпает на Render
-
-Бесплатный тариф усыпляет сервис после 15 минут простоя, первый запрос идёт 30–60 секунд.
-
-1. **Self-ping** — `webhook_app.py` поднимает фоновый поток, который каждые 10 минут дёргает `/health`. Плюс сам регистрирует вебхук при старте, если задан `EXTERNAL_URL`. Настраивать не нужно.
-2. **UptimeRobot** — внешний бесплатный монитор каждые 5 минут на `https://<bot>.onrender.com/health`.
-
-## Деплой на Render
-
-1. Репозиторий: `https://github.com/glcskl/tg3`
-2. На render.com → New → **Blueprint** (подхватит `render.yaml`) либо New → Web Service
-3. Задать переменные окружения из таблицы выше
-4. Деплой — self-ping сам зарегистрирует вебхук
-
-## Стек
-
-- Python 3 · Flask + gunicorn (только webhook)
-- Pillow — обработка изображений
-- Upstash Redis — хранение состояний между шагами
-
-Фотографии перед рендером сжимаются: `thumbnail` до 4096×4096 через LANCZOS, JPEG quality 88 — иначе не проходит лимит Telegram в 20 МБ.
-
-## Структура
+Create a `.env` file in the project root:
 
 ```
-tg3/
-├── webhook_app.py     всё приложение: хендлеры, панель, рендер, keep-alive
-├── image_processor.py рендер фото — фильтры, шрифты, рамки, стили текста
-├── app.py             шим: `from webhook_app import app`, 4 строки
-├── requirements.txt   gunicorn, flask, requests, python-dotenv, Pillow
-├── Procfile           команда запуска для Render
-├── render.yaml        конфигурация Render
-└── venv/              ⚠ закоммичен в репозиторий, см. ниже
+BOT_TOKEN=123456:ABCDEF...
+BOT_USERNAME=my_photo_bot
+REDIS_URL=rediss://default:token@host.upstash.io:6379
+REDIS_TOKEN=token
+EXTERNAL_URL=https://your-instance.onrender.com
 ```
 
-## Известные ограничения
+### Installation
 
-- **В репозиторий закоммичен `venv/`** — 932 файла, 14 МБ. `.gitignore` содержит `venv/`, но файлы попали в историю раньше и продолжают отслеживаться. Пул-реквест не проходит, клонится медленно, а вместе с зависимостями тянутся возможные дыры в безопасности. Нужен `git rm -r --cached venv` — не сделал, потому что это переписывает историю и просится отдельным шагом.
-- **`.env.example` неполный** — описан только `BOT_TOKEN`.
-- **Стили и шрифты захардкожены** в словари `FILTERS`, `FONTS`, `FRAMES`, `TEXT_STYLES` (`webhook_app.py:243-276`). Добавление нового варианта требует деплоя.
-- **Без polling-режима** и без локального запуска вне webhook — `app.py` поднимает Flask только для отладки.
-- **Тестов нет.**
-- **Лицензии нет.** Формально все права защищены.
+```bash
+git clone https://github.com/glcskl/tg3.git
+cd tg3
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-## Лицензия
+### Running
 
-Файл `LICENSE` отсутствует. Формально все права защищены. Добавить лицензию — скажи, какой.
+Local development:
+
+```bash
+python app.py
+```
+
+Webhook mode, which is what the hosting platform uses:
+
+```bash
+gunicorn webhook_app:app
+```
+
+## Project structure
+
+```
+app.py             local entry point and message handlers
+webhook_app.py     Flask application serving the Telegram webhook
+image_processor.py text rendering and image composition
+render.yaml        Render service blueprint
+Procfile           process definition for the hosting platform
+requirements.txt   pinned dependencies
+```
+
+## Deployment
+
+`render.yaml` lets Render provision the service straight from the blueprint. The `Procfile` starts Gunicorn on `webhook_app:app`, and the webhook URL must be registered with Telegram before traffic arrives.
+
+## Notes
+
+This project is personal. It performs no image recognition and no machine learning; every effect is deterministic image composition done with Pillow.
