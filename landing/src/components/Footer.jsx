@@ -51,7 +51,7 @@ export default function Footer() {
         </div>
 
         <div className="site-footer__bottom">
-          <span className="mono">© 2026 CoverCraft · учебный проект, «Управление IT-проектами»</span>
+          <span className="mono">Сайт собрал Токарь Глеб Максимович · все права защищены</span>
           <span className="mono">
             <a href="https://github.com/glcskl/tg3" target="_blank" rel="noreferrer">
               GitHub
