@@ -76,12 +76,27 @@ Webhook mode, which is what the hosting platform uses:
 gunicorn webhook_app:app
 ```
 
+## Landing page
+
+`landing/` holds the CoverCraft landing page: a Vite + React single-page site with a working 1280 × 720 canvas editor, six presets, colour correction and a composition score. Everything renders in the browser, so photos never leave the device.
+
+```bash
+cd landing
+npm install
+npm run dev      # http://localhost:5173
+npm run build
+```
+
+Pushes to `main` that touch `landing/` trigger `.github/workflows/deploy-landing.yml`, which builds with `VITE_BASE=/tg3/` and publishes `landing/dist` to the `gh-pages` branch. GitHub Pages serves it at https://glcskl.github.io/tg3/ once the repository's Pages source is set to `gh-pages`.
+
 ## Project structure
 
 ```
 app.py             local entry point and message handlers
 webhook_app.py     Flask application serving the Telegram webhook
 image_processor.py text rendering and image composition
+landing/           CoverCraft landing page and browser editor (Vite + React)
+.github/workflows/ CI and GitHub Pages deployment
 render.yaml        Render service blueprint
 Procfile           process definition for the hosting platform
 requirements.txt   pinned dependencies
