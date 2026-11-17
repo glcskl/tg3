@@ -87,7 +87,7 @@ npm run dev      # http://localhost:5173
 npm run build
 ```
 
-Pushes to `main` that touch `landing/` trigger `.github/workflows/deploy-landing.yml`, which builds with `VITE_BASE=/tg3/` and publishes `landing/dist` to the `gh-pages` branch. GitHub Pages serves it at https://glcskl.github.io/tg3/ once the repository's Pages source is set to `gh-pages`.
+Pushes to `main` that touch `landing/` trigger `.github/workflows/deploy-landing.yml`, which builds with `VITE_BASE=/tg3/` and publishes `landing/dist` to the `gh-pages` branch. GitHub Pages serves that branch at https://glcskl.github.io/tg3/.
 
 ## Project structure
 
