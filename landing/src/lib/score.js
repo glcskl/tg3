@@ -33,7 +33,7 @@ const CHECKS = [
   {
     id: 'size',
     weight: 12,
-    test: (m) => m.size >= 54,
+    test: (m) => (m.sizeRatio ? m.sizeRatio >= 0.0422 : m.size >= 54),
     text: 'Крупный кегль для мобильной ленты',
     hint: 'Короткий заголовок даст крупнее шрифт',
   },

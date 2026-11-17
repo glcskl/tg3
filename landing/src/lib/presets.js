@@ -38,7 +38,13 @@ export const PHOTOS = [
   { id: 'dog', name: 'Собака', src: 'photos/dog.jpg' },
 ]
 
+export const FORMATS = [
+  { id: 'wide', name: 'Горизонталь', ratio: '16:9', w: 1280, h: 720, note: 'видео и превью' },
+  { id: 'vertical', name: 'Вертикаль', ratio: '9:16', w: 1080, h: 1920, note: 'шортсы и рилсы' },
+]
+
 export const BASE_STATE = {
+  format: 'wide',
   preset: 'quiet',
   photo: 'mountains',
   title: 'Тихая дорога',
@@ -175,3 +181,5 @@ export const PRESETS = [
 
 export const presetById = (id) => PRESETS.find((p) => p.id === id) || PRESETS[0]
 export const photoById = (id) => PHOTOS.find((p) => p.id === id) || PHOTOS[0]
+export const formatById = (id) => FORMATS.find((f) => f.id === id) || FORMATS[0]
+export const formatOf = (state) => formatById(state?.format)

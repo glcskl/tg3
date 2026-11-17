@@ -32,7 +32,7 @@ export default function Problem() {
                 <span className="mono">01</span> Открыть Photoshop или Canva
               </li>
               <li>
-                <span className="mono">02</span> Искать шаблон под формат 16:9
+                <span className="mono">02</span> Искать шаблон под нужный формат
               </li>
               <li>
                 <span className="mono">03</span> Подбирать шрифт и размер вручную
@@ -74,7 +74,7 @@ export default function Problem() {
                 <span className="mono">04</span> Посмотреть оценку композиции
               </li>
               <li>
-                <span className="mono">05</span> Скачать 1280 × 720 · до 2 МБ
+                <span className="mono">05</span> Скачать 16:9 или 9:16 · до 2 МБ
               </li>
             </ol>
             <p className="compare__note">

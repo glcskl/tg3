@@ -1,5 +1,4 @@
-export const W = 1280
-export const H = 720
+import { formatOf } from './presets.js'
 
 const INK = '#17140F'
 const PAPER = '#F7F2E7'
@@ -49,9 +48,14 @@ export async function warmFonts() {
   }
 }
 
-function frameInsets(frame) {
-  if (frame === 'polaroid') return { top: 34, right: 34, bottom: 146, left: 34 }
-  if (frame === 'bars') return { top: 0, right: 0, bottom: 0, left: 0 }
+/** Толщина полосы киножурнала: доля высоты холста. */
+const barHeight = (H) => Math.round(H * 0.1444)
+
+function frameInsets(frame, W, H) {
+  if (frame === 'polaroid') {
+    const side = Math.round(Math.min(W, H) * 0.047)
+    return { top: side, right: side, bottom: Math.round(H * 0.203), left: side }
+  }
   return { top: 0, right: 0, bottom: 0, left: 0 }
 }
 
@@ -138,7 +142,7 @@ function wrapLines(ctx, text, maxWidth) {
   return lines
 }
 
-function baseSize(title, frame) {
+function baseSize(title, frame, W, H) {
   const len = (title || '').trim().length
   let size = 108
   if (len > 14) size = 96
@@ -146,20 +150,35 @@ function baseSize(title, frame) {
   if (len > 32) size = 72
   if (len > 44) size = 62
   if (len > 58) size = 54
+  size *= W / 1280
+  if (H > W) size *= 1.15
   if (frame === 'polaroid') size *= 0.66
   if (frame === 'bars') size *= 0.58
   return Math.round(size)
 }
 
-function textArea(s, insets) {
+function textArea(s, insets, W, H) {
   if (s.frame === 'polaroid') {
-    return { x: 68, y: H - insets.bottom + 18, w: W - 136, h: insets.bottom - 44 }
+    const padX = Math.round(W * 0.0531)
+    return {
+      x: padX,
+      y: H - insets.bottom + Math.round(H * 0.025),
+      w: W - padX * 2,
+      h: insets.bottom - Math.round(H * 0.0611),
+    }
   }
   if (s.frame === 'bars') {
-    const h = 104
-    return { x: 72, y: s.position === 'top' ? 22 : H - h + 14, w: W - 144, h: h - 20 }
+    const barH = barHeight(H)
+    return {
+      x: Math.round(W * 0.0563),
+      y: s.position === 'top' ? Math.round(H * 0.0306) : H - barH + Math.round(H * 0.0194),
+      w: W - Math.round(W * 0.1126),
+      h: barH - Math.round(H * 0.0278),
+    }
   }
-  return { x: 84, y: 84, w: W - 168, h: H - 168 }
+  const mx = Math.round(W * 0.0656)
+  const my = Math.round(H * 0.1167)
+  return { x: mx, y: my, w: W - mx * 2, h: H - my * 2 }
 }
 
 function textZone(s, area, l, imageRect) {
@@ -176,22 +195,24 @@ function textZone(s, area, l, imageRect) {
   }
 }
 
-function layout(ctx, s, area) {
-  let size = baseSize(s.title, s.frame)
+function layout(ctx, s, area, W, H) {
+  const scale = W / 1280
+  const step = Math.max(4, Math.round(6 * scale))
+  let size = baseSize(s.title, s.frame, W, H)
   let lines = []
   let subSize = 0
-  const maxLines = s.frame === 'none' ? 3 : 2
+  const maxLines = s.frame === 'none' ? (H > W ? 4 : 3) : H > W ? 3 : 2
 
   for (let guard = 0; guard < 14; guard += 1) {
     ctx.font = fontString(s.font, size)
     lines = wrapLines(ctx, s.title, area.w)
-    if (lines.length <= maxLines || size <= 34) break
-    size -= 6
+    if (lines.length <= maxLines || size <= Math.round(34 * scale)) break
+    size -= step
   }
   if (!lines.length) lines = ['']
 
   const lineHeight = size * 1.08
-  subSize = Math.max(20, Math.round(size * 0.32))
+  subSize = Math.max(18, Math.round(size * 0.32))
   const gap = s.subtitle ? Math.round(subSize * 0.9) : 0
   const blockH = lines.length * lineHeight + (s.subtitle ? gap + subSize : 0)
   return { size, lines, lineHeight, subSize, gap, blockH }
@@ -216,24 +237,29 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-function drawWatermark(ctx, frame) {
+function drawWatermark(ctx, frame, W, H) {
+  const pad = Math.round(Math.min(W, H) * 0.04)
+  const size = Math.max(16, Math.round(W * 0.0133))
   ctx.save()
-  const y = frame === 'polaroid' ? H - 30 : H - 28
-  ctx.font = '500 17px "JetBrains Mono", monospace'
+  ctx.font = `500 ${size}px "JetBrains Mono", monospace`
   ctx.fillStyle = 'rgba(23,20,15,0.42)'
   if (frame === 'none') ctx.fillStyle = 'rgba(247,242,231,0.5)'
   ctx.textAlign = 'right'
   ctx.textBaseline = 'alphabetic'
-  ctx.fillText('COVERCRAFT', W - 30, y)
+  ctx.fillText('COVERCRAFT', W - pad, H - pad)
   ctx.restore()
 }
 
 /**
- * Рисует обложку 1280×720 и возвращает метрики для оценки композиции.
+ * Рисует обложку в выбранном формате (16:9 или 9:16)
+ * и возвращает метрики для оценки композиции.
  */
 export function renderCover(ctx, state, img, options = {}) {
   const s = state
-  const insets = frameInsets(s.frame)
+  const fmt = formatOf(s)
+  const W = fmt.w
+  const H = fmt.h
+  const insets = frameInsets(s.frame, W, H)
   const imageRect = {
     x: insets.left,
     y: insets.top,
@@ -263,14 +289,14 @@ export function renderCover(ctx, state, img, options = {}) {
   }
 
   if (s.frame === 'bars') {
-    const barH = 104
+    const barH = barHeight(H)
     ctx.fillStyle = '#F7F2E7'
     if (s.position === 'top') ctx.fillRect(0, 0, W, barH)
     else ctx.fillRect(0, H - barH, W, barH)
   }
 
-  const area = textArea(s, insets)
-  const l = layout(ctx, s, area)
+  const area = textArea(s, insets, W, H)
+  const l = layout(ctx, s, area, W, H)
   const zone = textZone(s, area, l, imageRect)
   const luma = s.frame === 'none' ? sampleLuma(ctx, zone) : 242
 
@@ -364,7 +390,7 @@ export function renderCover(ctx, state, img, options = {}) {
 
   if (options.safe) {
     ctx.save()
-    const m = 64
+    const m = Math.round(Math.min(W, H) * 0.0889)
     ctx.strokeStyle = 'rgba(255,255,255,0.5)'
     ctx.setLineDash([9, 9])
     ctx.lineWidth = 2
@@ -382,7 +408,7 @@ export function renderCover(ctx, state, img, options = {}) {
     ctx.restore()
   }
 
-  if (options.watermark) drawWatermark(ctx, s.frame)
+  if (options.watermark) drawWatermark(ctx, s.frame, W, H)
 
   ctx.restore()
 
@@ -397,6 +423,9 @@ export function renderCover(ctx, state, img, options = {}) {
     luma,
     lines: l.lines.length,
     size: l.size,
+    sizeRatio: l.size / W,
+    width: W,
+    height: H,
     color: fill,
     contrast,
     covered: l.blockH / H,
@@ -404,8 +433,9 @@ export function renderCover(ctx, state, img, options = {}) {
 }
 
 export function renderToCanvas(canvas, state, img, options = {}) {
+  const fmt = formatOf(state)
   const ctx = canvas.getContext('2d')
-  canvas.width = W
-  canvas.height = H
+  canvas.width = fmt.w
+  canvas.height = fmt.h
   return renderCover(ctx, state, img, options)
 }

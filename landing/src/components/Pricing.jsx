@@ -41,7 +41,7 @@ export default function Pricing({ account, setAccount, onOpenPaywall }) {
               <li>5 генераций в месяц</li>
               <li>Все пресеты и шрифты</li>
               <li>Цветокоррекция и проверка композиции</li>
-              <li>Экспорт JPEG или PNG · 1280 × 720 · до 2 МБ</li>
+              <li>Экспорт JPEG и PNG · 16:9 и 9:16 · до 2 МБ</li>
               <li className="is-muted">Водяной знак CoverCraft</li>
             </ul>
             <div className="plan__foot">

@@ -134,7 +134,7 @@ export default function Hero() {
         <div className="hero__copy">
           <p className="eyebrow">
             <span className="eyebrow__rule" aria-hidden />
-            Веб-сервис обложек · 1280 × 720
+            Веб-сервис обложек · 16:9 и 9:16
           </p>
 
           <h1 className="display hero__title">

@@ -4,13 +4,15 @@ import {
   BASE_STATE,
   EFFECTS,
   FONTS,
+  FORMATS,
   FRAMES,
   PHOTOS,
   POSITIONS,
   PRESETS,
+  formatOf,
   photoById,
 } from '../lib/presets.js'
-import { H, W, loadImage, renderCover, renderToCanvas, warmFonts } from '../lib/render.js'
+import { loadImage, renderCover, renderToCanvas, warmFonts } from '../lib/render.js'
 import { scoreCover } from '../lib/score.js'
 import { FREE_LIMIT, registerExport, remaining } from '../lib/account.js'
 
@@ -79,6 +81,7 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
 
+  const fmt = formatOf(state)
   const score = scoreCover(meta, state)
   const left = remaining(account)
   const update = useCallback((patch) => setState((current) => ({ ...current, ...patch })), [setState])
@@ -188,8 +191,8 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
     setBusy(true)
     try {
       const off = document.createElement('canvas')
-      off.width = W
-      off.height = H
+      off.width = fmt.w
+      off.height = fmt.h
       renderCover(off.getContext('2d'), state, img, { watermark: !account.pro })
 
       let blob
@@ -198,8 +201,8 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
         let scale = 0.9
         while (blob.size > 2 * 1024 * 1024 && scale > 0.58) {
           const scaled = document.createElement('canvas')
-          scaled.width = Math.round(W * scale)
-          scaled.height = Math.round(H * scale)
+          scaled.width = Math.round(fmt.w * scale)
+          scaled.height = Math.round(fmt.h * scale)
           scaled.getContext('2d').drawImage(off, 0, 0, scaled.width, scaled.height)
           blob = await toBlob(scaled, 'image/png')
           scale -= 0.08
@@ -213,7 +216,7 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
         }
       }
 
-      const name = `covercraft-${new Date().toISOString().slice(0, 10)}-${Date.now()
+      const name = `covercraft-${fmt.id}-${new Date().toISOString().slice(0, 10)}-${Date.now()
         .toString()
         .slice(-4)}.${type}`
       const link = document.createElement('a')
@@ -226,7 +229,7 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
       if (!account.pro) setAccount(next)
       const rest = remaining(next)
       showToast(
-        `Скачано · ${(blob.size / 1024 / 1024).toFixed(2)} МБ${
+        `Скачано · ${fmt.w} × ${fmt.h} · ${(blob.size / 1024 / 1024).toFixed(2)} МБ${
           Number.isFinite(rest) ? ` · осталось ${rest} из ${FREE_LIMIT}` : ' · без водяного знака'
         }`,
       )
@@ -266,7 +269,9 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
         <div className="studio">
           <div className="studio__stage">
             <div className="stage__head">
-              <span className="mono">Холст · 1280 × 720</span>
+              <span className="mono">
+                Холст · {fmt.w} × {fmt.h} · {fmt.ratio}
+              </span>
               <div className="stage__tools">
                 <label className="switch">
                   <input
@@ -280,8 +285,8 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
               </div>
             </div>
 
-            <div className="stage__canvas">
-              <canvas ref={canvasRef} width={W} height={H} />
+            <div className={`stage__canvas${fmt.h > fmt.w ? ' stage__canvas--vertical' : ''}`}>
+              <canvas ref={canvasRef} width={fmt.w} height={fmt.h} />
               {!account.pro && <span className="stage__watermark mono">free · водяной знак</span>}
             </div>
 
@@ -322,6 +327,28 @@ export default function Editor({ state, setState, account, setAccount, onOpenPay
               <span className={`panel__quota ${!account.pro && left === 0 ? 'is-empty' : ''}`}>
                 {account.pro ? 'PRO · без лимита' : `${left} из ${FREE_LIMIT} генераций`}
               </span>
+            </div>
+
+            <div className="group">
+              <div className="group__head">
+                <span>Формат</span>
+                <span className="mono">
+                  {fmt.w} × {fmt.h}
+                </span>
+              </div>
+              <div className="chips__row" role="group" aria-label="Формат обложки">
+                {FORMATS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`chip ${state.format === option.id ? 'is-active' : ''}`}
+                    aria-pressed={state.format === option.id}
+                    onClick={() => update({ format: option.id })}
+                  >
+                    {option.name} · {option.ratio}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="group">
