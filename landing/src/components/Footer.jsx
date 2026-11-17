@@ -6,13 +6,6 @@ const NAV = [
   { href: '#faq', label: 'FAQ' },
 ]
 
-const TEAM = [
-  ['Титов Денис', 'PM / PO / QA'],
-  ['Токарь Глеб', 'Fullstack / ML / DevOps'],
-  ['Шкредов Глеб', 'UI/UX / арт-директор'],
-  ['Труфина Елена', 'экономика проекта'],
-]
-
 export default function Footer() {
   return (
     <footer className="site-footer">
@@ -36,22 +29,12 @@ export default function Footer() {
               </a>
             ))}
           </nav>
-
-          <div className="site-footer__team">
-            <span className="mono">команда</span>
-            <ul>
-              {TEAM.map(([name, role]) => (
-                <li key={name}>
-                  <span>{name}</span>
-                  <span className="mono">{role}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
         <div className="site-footer__bottom">
-          <span className="mono">Сайт собрал Токарь Глеб Максимович · все права защищены</span>
+          <span className="mono">
+            © 2026 CoverCraft · сайт собрал Токарь Глеб Максимович все права защищены
+          </span>
           <span className="mono">
             <a href="https://github.com/glcskl/tg3" target="_blank" rel="noreferrer">
               GitHub

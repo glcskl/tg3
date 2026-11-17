@@ -2304,7 +2304,7 @@ details[open] .faq__plus::after {
 
 .site-footer__top {
   display: grid;
-  grid-template-columns: 1.1fr 0.6fr 1fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: clamp(28px, 4vw, 64px);
 }
 
@@ -2331,32 +2331,6 @@ details[open] .faq__plus::after {
 
 .site-footer__nav a:hover {
   color: var(--terra);
-}
-
-.site-footer__team > .mono {
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-40);
-}
-
-.site-footer__team ul {
-  margin-top: 10px;
-}
-
-.site-footer__team li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
-  border-bottom: 1px dotted var(--line);
-  font-size: 12.5px;
-}
-
-.site-footer__team li .mono {
-  font-size: 9px;
-  color: var(--ink-40);
-  text-align: right;
 }
 
 .site-footer__bottom {
@@ -2633,10 +2607,6 @@ details[open] .faq__plus::after {
     grid-template-columns: 1fr 1fr;
   }
 
-  .site-footer__team {
-    grid-column: 1 / -1;
-    max-width: 420px;
-  }
 }
 
 @media (max-width: 720px) {
